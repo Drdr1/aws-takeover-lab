@@ -38,6 +38,11 @@ as_role() {
 
 rm -rf "$OUT" && mkdir -p "$OUT"
 cp -r "$ROOT/terraform" "$ROOT/policies" "$OUT/"
+# Lab only: pin the AWS provider to the version this lab is tested with. Newer
+# releases read S3 bucket tags through S3 Control, which prefixes the endpoint
+# host with the account ID (123456789012.127.0.0.1); a local moto endpoint
+# can't answer that. Against a real account the repo's "~> 6.20" stands.
+sed -i 's/version = "~> 6.20"/version = "6.20.0"/' "$OUT"/terraform/*/*.tf
 ENV="$OUT/terraform/environment"
 curl -fsS -X POST "$AWS_ENDPOINT_URL/moto-api/reset" >/dev/null
 as_owner
