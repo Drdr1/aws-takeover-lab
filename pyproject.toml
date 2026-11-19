@@ -1,0 +1,39 @@
+[project]
+name = "aws-takeover-lab"
+version = "0.1.0"
+description = "Take over an undocumented AWS account: read-only inventory, Terraform import with a zero-diff gate, owner guardrails, SSN envelope encryption, drift detection."
+requires-python = ">=3.12"
+dependencies = ["boto3>=1.35", "cryptography>=43"]
+
+[project.optional-dependencies]
+dev = ["moto[server]>=5.1", "pytest>=8", "ruff>=0.8", "mypy>=1.13", "boto3-stubs[ec2,iam,s3,rds,kms,secretsmanager,cloudtrail,sts]"]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = ["S101", "S105", "S106", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "B017"]
+
+[tool.mypy]
+strict = true
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["moto.*"]
+ignore_missing_imports = true

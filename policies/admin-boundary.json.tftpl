@@ -1,0 +1,108 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowWithinBoundary",
+      "Effect": "Allow",
+      "Action": "*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "NewRolesAndUsersMustCarryThisBoundary",
+      "Effect": "Deny",
+      "Action": [
+        "iam:CreateRole",
+        "iam:CreateUser",
+        "iam:PutRolePermissionsBoundary",
+        "iam:PutUserPermissionsBoundary"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "iam:PermissionsBoundary": "arn:aws:iam::${account_id}:policy/${boundary_name}"
+        }
+      }
+    },
+    {
+      "Sid": "BoundaryCannotBeRemovedOrEdited",
+      "Effect": "Deny",
+      "Action": [
+        "iam:DeleteRolePermissionsBoundary",
+        "iam:DeleteUserPermissionsBoundary",
+        "iam:CreatePolicyVersion",
+        "iam:DeletePolicy",
+        "iam:DeletePolicyVersion",
+        "iam:SetDefaultPolicyVersion"
+      ],
+      "Resource": [
+        "arn:aws:iam::${account_id}:policy/${boundary_name}",
+        "arn:aws:iam::${account_id}:role/*",
+        "arn:aws:iam::${account_id}:user/*"
+      ]
+    },
+    {
+      "Sid": "OwnerPrincipalsAreUntouchable",
+      "Effect": "Deny",
+      "Action": "iam:*",
+      "Resource": [
+        "arn:aws:iam::${account_id}:role/${owner_role}",
+        "arn:aws:iam::${account_id}:user/${owner_user}"
+      ]
+    },
+    {
+      "Sid": "AuditTrailStaysOn",
+      "Effect": "Deny",
+      "Action": [
+        "cloudtrail:StopLogging",
+        "cloudtrail:DeleteTrail",
+        "cloudtrail:UpdateTrail",
+        "cloudtrail:PutEventSelectors"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "OwnerOnlyKeysStayOwnerOnly",
+      "Effect": "Deny",
+      "Action": [
+        "kms:PutKeyPolicy",
+        "kms:CreateGrant",
+        "kms:ScheduleKeyDeletion",
+        "kms:DisableKey",
+        "kms:TagResource",
+        "kms:UntagResource",
+        "kms:Decrypt"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Protection": "owner-only"
+        }
+      }
+    },
+    {
+      "Sid": "StateBucketPolicyIsOwnerOnly",
+      "Effect": "Deny",
+      "Action": [
+        "s3:PutBucketPolicy",
+        "s3:DeleteBucketPolicy",
+        "s3:PutBucketVersioning",
+        "s3:PutLifecycleConfiguration"
+      ],
+      "Resource": "arn:aws:s3:::${state_bucket}"
+    },
+    {
+      "Sid": "AccountAndBillingAreOwnerOnly",
+      "Effect": "Deny",
+      "Action": [
+        "account:*",
+        "aws-portal:*",
+        "billing:*",
+        "organizations:LeaveOrganization",
+        "iam:CreateAccountAlias",
+        "iam:DeleteAccountAlias",
+        "iam:UpdateAccountPasswordPolicy"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+flowchart LR
+  internet(("Internet"))
+  subgraph n0["VPC los-prod 10.20.0.0/16"]
+    subgraph n2["los-public-a 10.20.1.0/24"]
+      n9["los-web-01<br/>i-416bbd8f82f683b66<br/>linux t3.medium"]
+    end
+    subgraph n3["los-private-a 10.20.11.0/24"]
+    end
+    subgraph n4["los-public-b 10.20.2.0/24"]
+      n10["mismo-bridge-01<br/>i-f63df76d81c7e8a2e<br/>windows t3.medium"]
+    end
+    subgraph n5["los-private-b 10.20.12.0/24"]
+    end
+    n12[("los-db<br/>postgres 16.3")]
+  end
+  internet -- 443 --> n9
+  internet -. 22 .-> n9
+  internet -. 3389 .-> n10
+  n9 -- 5432 --> n12
+  n10 -- 5432 --> n12
+  n13[/"s3: acme-los-documents"/]
+  n14[/"s3: acme-los-backups"/]

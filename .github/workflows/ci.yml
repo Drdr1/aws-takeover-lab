@@ -1,0 +1,92 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check src tests
+      - run: ruff format --check src tests
+      - run: mypy
+      - run: pytest -q
+
+  terraform-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - run: terraform fmt -check -recursive terraform
+      - name: validate each stack
+        run: |
+          for stack in bootstrap guardrails environment; do
+            terraform -chdir=terraform/$stack init -backend=false -input=false >/dev/null
+            terraform -chdir=terraform/$stack validate
+          done
+
+  takeover-lab:
+    # The full story against moto: inventory, owner guardrails, import with
+    # the zero-diff gate, and drift detection. Run with both CLIs.
+    needs: [python, terraform-static]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cli: [terraform, tofu]
+    env:
+      AWS_ENDPOINT_URL: http://127.0.0.1:5000
+      AWS_DEFAULT_REGION: us-east-1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - if: matrix.cli == 'terraform'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - if: matrix.cli == 'tofu'
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
+      - name: start moto
+        run: |
+          MOTO_IAM_LOAD_MANAGED_POLICIES=true nohup moto_server -H 127.0.0.1 -p 5000 > moto.log 2>&1 &
+          for _ in $(seq 30); do curl -fsS "$AWS_ENDPOINT_URL/moto-api/" >/dev/null && exit 0; sleep 1; done
+          cat moto.log; exit 1
+      - name: run the takeover
+        run: TF="$(command -v ${{ matrix.cli }})" ./scripts/run_lab.sh
+      - name: publish the reports to the job summary
+        if: always()
+        run: |
+          for f in out/before-report.md out/drift.md out/after-report.md; do
+            [ -f "$f" ] && { cat "$f"; echo; } >> "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: takeover-${{ matrix.cli }}
+          path: |
+            out/*.md
+            out/*.json
+            out/*.mmd
+            out/*.txt
+            out/terraform/environment/*.tf
+          if-no-files-found: warn

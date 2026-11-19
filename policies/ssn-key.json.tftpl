@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OwnerControlsTheKey",
+      "Effect": "Allow",
+      "Principal": {"AWS": "arn:aws:iam::${account_id}:role/${owner_role}"},
+      "Action": "kms:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "AdminsCanSeeButNotUseOrChange",
+      "Effect": "Allow",
+      "Principal": {"AWS": "arn:aws:iam::${account_id}:role/${deploy_role}"},
+      "Action": ["kms:DescribeKey", "kms:GetKeyPolicy", "kms:GetKeyRotationStatus", "kms:ListResourceTags", "kms:ListAliases"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "OnlyTheLosAppUsesTheKeyAndOnlyForSsns",
+      "Effect": "Allow",
+      "Principal": {"AWS": "arn:aws:iam::${account_id}:role/${app_role}"},
+      "Action": ["kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey"],
+      "Resource": "*",
+      "Condition": {"StringEquals": {"kms:EncryptionContext:purpose": "borrower-ssn"}}
+    }
+  ]
+}

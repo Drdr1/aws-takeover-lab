@@ -1,0 +1,20 @@
+# aws_db_subnet_group.los_db_subnets will be imported
+# aws_iam_role.los_app will be imported
+# aws_iam_user.prev_admin will be imported
+# aws_iam_user_policy_attachment.prev_admin_administratoraccess will be imported
+# aws_instance.los_web_01 will be imported
+# aws_instance.mismo_bridge_01 will be imported
+# aws_internet_gateway.los_prod_igw will be imported
+# aws_s3_bucket.acme_los_backups will be imported
+# aws_s3_bucket.acme_los_documents will be imported
+# aws_s3_bucket_public_access_block.acme_los_backups will be imported
+# aws_s3_bucket_versioning.acme_los_backups will be imported
+# aws_security_group.los_db will be imported
+# aws_security_group.los_web will be imported
+# aws_security_group.mismo_bridge will be imported
+# aws_subnet.los_private_a will be imported
+# aws_subnet.los_private_b will be imported
+# aws_subnet.los_public_a will be imported
+# aws_subnet.los_public_b will be imported
+# aws_vpc.los_prod will be imported
+Plan: 21 to import, 0 to add, 2 to change, 0 to destroy.

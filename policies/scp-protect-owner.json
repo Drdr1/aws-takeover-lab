@@ -1,0 +1,34 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OnlyOwnerRoleTouchesGuardrails",
+      "Effect": "Deny",
+      "Action": [
+        "cloudtrail:StopLogging",
+        "cloudtrail:DeleteTrail",
+        "cloudtrail:UpdateTrail",
+        "iam:DeleteRolePermissionsBoundary",
+        "iam:DeleteUserPermissionsBoundary",
+        "kms:PutKeyPolicy",
+        "kms:ScheduleKeyDeletion",
+        "organizations:LeaveOrganization",
+        "account:*"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {"aws:PrincipalArn": "arn:aws:iam::*:role/owner-break-glass"}
+      }
+    },
+    {
+      "Sid": "StayInApprovedRegions",
+      "Effect": "Deny",
+      "NotAction": ["iam:*", "sts:*", "organizations:*", "support:*", "cloudfront:*", "route53:*", "budgets:*"],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {"aws:RequestedRegion": ["us-east-1", "us-east-2"]},
+        "ArnNotLike": {"aws:PrincipalArn": "arn:aws:iam::*:role/owner-break-glass"}
+      }
+    }
+  ]
+}
